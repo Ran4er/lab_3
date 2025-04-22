@@ -1,95 +1,95 @@
-<project name="web_3" default="compile" xmlns:ivy="antlib:org.apache.ivy.ant">
+<?xml version="1.0" encoding="UTF-8"?>
 
-    <!-- Загрузка параметров -->
+<project name="lab3" default="build">
+
     <property file="build.properties"/>
 
-    <!-- Инициализация Ivy -->
-    <target name="ivy-init">
-        <ivy:configure />
-        <ivy:resolve />
-        <ivy:retrieve pattern="${lib.dir}/[artifact]-[revision].[ext]" sync="true"/>
-    </target>
-
-    <!-- Путь к зависимостям -->
-    <path id="libs.main.module">
-        <fileset dir="${lib.dir}">
-            <include name="*.jar"/>
-        </fileset>
-        <fileset dir="libraries">
-            <include name="*.jar"/>
-        </fileset>
+    <path id="classpath">
+        <fileset dir="${lib.dir}" includes="*.jar"/>
+        <fileset dir="${main.dir}" includes="*.java"/>
     </path>
 
-    <!-- Подключение Ant-Contrib -->
-    <taskdef resource="net/sf/antcontrib/antlib.xml">
+    <path id="classpath.test">
+        <pathelement location="${junit}"/>
+        <pathelement location="${hamcrest}"/>
+        <pathelement location="${classes.dir}"/>
+    </path>
+
+    <taskdef resource="net/sf/antcontrib/antcontrib.properties">
         <classpath>
-            <pathelement location="${ant-contrib.jar}"/>
+            <pathelement location="${contrib}"/>
         </classpath>
     </taskdef>
 
-    <!-- Цель compile -->
-    <target name="compile" depends="ivy-init">
-        <mkdir dir="${build.dir}/classes"/>
-        <javac srcdir="${src.dir}/java"
-               destdir="${build.dir}/classes"
-               includeantruntime="false"
-               debug="true">
-            <classpath refid="libs.main.module"/>
-            <compilerarg value="-Xplugin:lombok"/> <!-- Обработка Lombok -->
-        </javac>
-        <copy todir="${build.dir}/classes">
-            <fileset dir="${src.dir}/resources"/>
-        </copy>
+    <taskdef resource="net/sf/antcontrib/antlib.xml">
+        <classpath>
+            <pathelement location="${contrib}"/>
+        </classpath>
+    </taskdef>
+
+    <target name="compile" depends="clean">
+        <echo message="***** COMPILE STARTED *****"/>
+        <mkdir dir="${classes.dir}"/>
+        <mkdir dir="${test.classes.dir}"/>
+        <javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="classpath" includeantruntime="false"/>
+        <echo message="***** COMPILE COMPLETED *****"/>
     </target>
 
-    <!-- Цель build -->
     <target name="build" depends="compile">
-        <jar destfile="${build.dir}/${jar.name}" basedir="${build.dir}/classes">
+        <echo message="***** BUILD STARTED *****"/>
+        <copy todir="${build.dir}">
+            <fileset dir="${web.dir}"/>
+        </copy>
+        <copy todir="${build.dir.lib}">
+            <fileset dir="${lib.dir}"/>
+        </copy>
+        <copy todir="${classes.dir}">
+            <fileset dir="${resources.dir}"/>
+        </copy>
+        <jar destfile="${build.dir}/${ant.project.name}.jar">
+            <fileset dir="${classes.dir}"/>
             <manifest>
-                <attribute name="Main-Class" value="${mainClass}"/>
-                <attribute name="Package-Version" value="${version}"/>
+                <attribute name="Created-By" value="nyapsilon"/>
+                <attribute name="Manifest-Version" value="1.0"/>
+                <attribute name="Main-Class" value="NoClass"/>
             </manifest>
         </jar>
+        <war destfile="${build.dir}/${ant.project.name}.war" webxml="${build.web.xml}">
+            <fileset dir="${build.dir}"/>
+            <manifest>
+                <attribute name="Created-By" value="nyapsilon"/>
+                <attribute name="Manifest-Version" value="1.0"/>
+                <attribute name="Main-Class" value="NoClass"/>
+            </manifest>
+        </war>
+        <echo message="***** BUILD COMPLETED *****"/>
     </target>
 
-    <!-- Цель clean -->
     <target name="clean">
+        <echo message="***** CLEAN STARTED *****"/>
         <delete dir="${build.dir}"/>
-        <delete dir="${errors.dir}"/>
-        <delete dir="${team.dir}"/>
-        <delete dir="${zip.dir}"/>
-        <delete file="MANIFEST.MF"/>
+        <delete dir="${junit.report.dir}"/>
+        <echo message="***** CLEAN COMPLETED *****"/>
     </target>
 
-    <!-- Цель test -->
     <target name="test" depends="build">
-        <mkdir dir="${build.dir}/test-classes"/>
-        <javac srcdir="${test.dir}/java"
-               destdir="${build.dir}/test-classes"
-               includeantruntime="false">
-            <classpath>
-                <path refid="libs.main.module"/>
-                <pathelement location="${build.dir}/classes"/>
-            </classpath>
+        <echo message="***** TEST STARTED *****"/>
+        <mkdir dir="${test.classes.dir}"/>
+        <mkdir dir="${junit.report.dir}"/>
+        <javac destdir="${test.classes.dir}" srcdir="${test.dir}" includeantruntime="false" encoding="utf-8">
+            <classpath refid="classpath.test"/>
         </javac>
-        <junit printsummary="yes" fork="true">
+        <junit printsummary="on" haltonfailure="true" haltonerror="true">
             <classpath>
-                <path refid="libs.main.module"/>
-                <pathelement location="${build.dir}/classes"/>
-                <pathelement location="${build.dir}/test-classes"/>
+                <path refid="classpath.test"/>
+                <pathelement location="${test.classes.dir}"/>
             </classpath>
-            <formatter type="plain"/>
-            <batchtest todir="${errors.dir}">
-                <fileset dir="${test.dir}/java" includes="**/*Test.java"/>
+            <batchtest fork="yes" todir="${junit.report.dir}">
+                <formatter type="plain"/>
+                <fileset dir="${test.dir}" includes="*Test.java"/>
             </batchtest>
         </junit>
-    </target>
-
-    <!-- Цель music -->
-    <target name="music" depends="build">
-        <sound>
-            <success source="${music.dir}/success_2.wav"/>
-        </sound>
+        <echo message="***** TEST COMPLETED *****"/>
     </target>
 
     <!-- Цель team -->
@@ -120,42 +120,3 @@
     </target>
 
 </project>
-
-    <!-- team - осуществляет получение из git-репозитория 4 предыдущих ревизий, их сборку (по аналогии с основной) и упаковку получившихся jar-файлов в zip-архив -->
-<!--    <target name="team">-->
-
-<!--        &lt;!&ndash; создание директории для jar-ревизий &ndash;&gt;-->
-<!--        <mkdir dir="${team.dir}"/>-->
-
-<!--        &lt;!&ndash; получение хэша последнего коммита &ndash;&gt;-->
-<!--        <exec executable="git" outputproperty="git.revision" failifexecutionfails="false" errorproperty="">-->
-<!--            <arg value="describe"/>-->
-<!--            <arg value="&#45;&#45;tags"/>-->
-<!--            <arg value="&#45;&#45;always"/>-->
-<!--            <arg value="HEAD"/>-->
-<!--        </exec>-->
-
-<!--        &lt;!&ndash; цикл для 4 ревизий &ndash;&gt;-->
-<!--        <for list="0,1,2,3" param="revision">-->
-<!--            <sequential>-->
-
-<!--                &lt;!&ndash; получение хэша ревизии &ndash;&gt;-->
-<!--                <exec executable="git">-->
-<!--                    <arg value="checkout"/>-->
-<!--                    <arg value="HEAD~@{revision}"/>-->
-<!--                </exec>-->
-
-<!--                &lt;!&ndash; сборка jar-ника и перенос его в каталог ${team.dir} для сохранения архивов ревизий &ndash;&gt;-->
-<!--                <antcall target="build"/>-->
-<!--                <move file="${build.dir}${jar.name}" todir="${team.dir}"/>-->
-<!--                <move file="${team.dir}${jar.name}" tofile="${team.dir}/@{revision}.jar"/>-->
-<!--            </sequential>-->
-<!--        </for>-->
-
-<!--        &lt;!&ndash; переключение на главную ветку &ndash;&gt;-->
-<!--        <exec executable="git" command="git checkout ${git.revision}"/>-->
-<!--        <exec executable="git" command="git switch master"/>-->
-
-<!--        &lt;!&ndash; упаковка ревизий в зип &ndash;&gt;-->
-<!--        <zip destfile="zip-file/jars.zip" basedir="${team.dir}"/>-->
-<!--    </target>-->
