@@ -1,0 +1,36 @@
+<ivy-module version="2.0">
+    <info organisation="org.example" module="web_3"/>
+    <configurations>
+        <conf name="compile" description="Compile dependencies"/>
+        <conf name="runtime" extends="compile" description="Runtime dependencies"/>
+        <conf name="test" extends="runtime" description="Test dependencies"/>
+        <conf name="provided" description="Provided dependencies (e.g. by container)"/>
+    </configurations>
+
+    <dependencies>
+        <!-- EclipseLink -->
+        <dependency org="org.eclipse.persistence" name="eclipselink" rev="3.0.2" conf="compile->default">
+            <exclude org="org.eclipse.persistence" module="commonj.sdo"/>
+        </dependency>
+
+        <!-- PostgreSQL -->
+        <dependency org="org.postgresql" name="postgresql" rev="42.6.0" conf="runtime->default"/>
+
+        <!-- Lombok -->
+        <dependency org="org.projectlombok" name="lombok" rev="1.18.22" conf="provided->default"/>
+
+        <!-- PrimeFaces -->
+        <dependency org="org.primefaces" name="primefaces" rev="12.0.0" conf="compile->default">
+            <artifact name="primefaces" type="jar" classifier="jakarta"/>
+        </dependency>
+
+        <!-- Jakarta EE -->
+        <dependency org="jakarta.ejb" name="jakarta.ejb-api" rev="4.0.1" conf="provided->default"/>
+        <dependency org="jakarta.mvc" name="jakarta.mvc-api" rev="2.1.0" conf="compile->default"/>
+        <dependency org="jakarta.faces" name="jakarta.faces-api" rev="4.0.1" conf="provided->default"/>
+        <dependency org="jakarta.platform" name="jakarta.jakartaee-api" rev="9.1.0" conf="provided->default"/>
+
+        <!-- JUnit 4 -->
+        <dependency org="junit" name="junit" rev="4.12" conf="test->default"/>
+    </dependencies>
+</ivy-module>
